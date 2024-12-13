@@ -11,7 +11,7 @@ def sticker_get(message):
     bot.send_sticker(message.chat.id, message.sticker.file.id)
 
 
-----------COMMANDS----------------------------
+# ----------COMMANDS----------------------------
 
 @bot.message_handler(commands=['open'])
 def handler_open(message):
