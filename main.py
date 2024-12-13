@@ -1,12 +1,17 @@
 import telebot
-from defer import inline_callbacks
-from duplicity.commandline import commands
 from telebot import types
 
 token = '7026411489:AAFC7FLRb6Yx2qnzqoSnsSsxXcPtGMxlW-Y'
 bot = telebot.TeleBot(token)
+#-------------STICKERS----------------------------
 
-#----------COMMANDS----------------------------
+@bot.message_handler(content_types=['sticker'])
+def sticker_get(message):
+    # print(message.sticker)
+    bot.send_sticker(message.chat.id, message.sticker.file.id)
+
+
+----------COMMANDS----------------------------
 
 @bot.message_handler(commands=['open'])
 def handler_open(message):
@@ -79,6 +84,7 @@ def f_b1(cl):
         bot.send_message(cl.message.chat.id, 'Right choice 1')
     elif cl.data == 'b2':
         bot.send_message(cl.message.chat.id, 'Right choice 2')
+
 
 #-------------TEXT--------------------------------
 
