@@ -7,11 +7,23 @@ import threading
 
 token = '7026411489:AAFC7FLRb6Yx2qnzqoSnsSsxXcPtGMxlW-Y'
 bot = telebot.TeleBot(token)
-filename = 'bot_message.txt'
+filetext = 'bot_text.txt'
+filenumber = 'bot_number.txt'
 
 # --------- MESSAGES -----------------------------------------------------
+def f1(v):
+    try:
+        int(v)
+        return True
+    except ValueError:
+        return False
+
 @bot.message_handler(content_types=['text'])
 def is_text(message):
+    if f1(message.text):
+        filename = 'bot_number.txt'
+    else:
+        filename = 'bot_text.txt'
     with open(filename, 'a') as file:
         file.write(message.text + '\n')
 
