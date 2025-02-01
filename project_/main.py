@@ -4,6 +4,8 @@ from SQliteManager import SQLNote
 import telebot
 import time
 import sqlite3
+import re
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 bot = telebot.TeleBot(c.BOT_TOKEN)
 
@@ -51,9 +53,51 @@ def bot_start(message):
             bot.send_message(message.chat.id, f'Користувача [{message.from_user.username}] додано')
         else:
             bot.send_message(message.chat.id, 'Ви вже підписалися на цього бота')
+
+def bot_add_note(message):
+    bot.send_message(message.chat.id, 'Введіть нотатку')
+    bot.register_next_step_handler(message, bot_add_title)
+
 def bot_add_title(message):
-    # add
-    bot.send_message(message.chat.id, 'Нотатку додано')
+    with get_db_cursor() as cur:
+        cur.execute(f"SELECT id FROM users WHERE chat_id={int(message.chat.id)}")
+        row = cur.fetchone()
+
+        if row:
+            cur.execute("INSERT INTO notes (user_id, title) VALUES (?, ?)",
+                        (row[0], message.text))
+            bot.send_message(message.chat.id, 'нотатку додано')
+        else:
+            bot.send_message(message.chat.id, 'Немає користувача :(')
+
+def all_notes(message):
+    with get_db_cursor() as cur:
+        cur.execute(f"SELECT id FROM users WHERE chat_id={int(message.chat.id)}")
+        row = cur.fetchone()
+
+        if row:
+            cur.execute(f"SELECT id, title, notification From notes WHERE user_id={row[0]}")
+            rows = cur.fetchall()
+
+            notes = ''
+            for r in rows:
+                notes += f"/edit_{r[0]}: {r[1]}. [{r[2]}]\n"
+            if notes:
+                bot.send_message(message.chat.id, notes)
+            else:
+                bot.send_message(message.chat.id, 'Нотаток немає')
+
+def edit_note(message, note_id: int = 0):
+
+    keyboard = InlineKeyboardMarkup()
+    b1 = InlineKeyboardButton('заголовок',callback_data='title_')
+    b2 = InlineKeyboardButton('опис',callback_data='content_')
+    b3 = InlineKeyboardButton('час',callback_data='notification_')
+    b4 = InlineKeyboardButton('видалити',callback_data='delete_')
+    keyboard.add(b1, b2, b3)
+    keyboard.add(b4)
+
+    bot.send_message(message.chat.id, 'Виберіть дію. \nРедагуваня: ', reply_markup=keyboard)
 
 # ---------------------- MESSAGE-HANDLERS --------------------
 
@@ -65,15 +109,23 @@ def bot_add_title(message):
 # help - вивести підказки
 # end - відписатися
 
-@bot.message_handler(commands=['start', 'add', 'edit', 'del', 'help', 'end'])
+@bot.message_handler(commands=['start', 'add', 'edit', 'del', 'help', 'end', 'all'])
 def bot_commands(message):
     if '/start' == message.text:
-        bot_start()
+        bot_start(message)
     elif '/add' == message.text:
-        bot.send_message(message.chat.id, 'Введіть нотатку')
-        bot.register_next_step_handler(message, bot_add_title)
+        bot_add_note(message)
     elif '/edit' == message.text:
         pass
+    elif '/all' == message.text:
+        all_notes(message)
+
+@bot.message_handler(regexp=r"^\/edit_\d+$")
+def handler_edit_id(message):
+    match = re.match(r"^\/edit_(\d+)$", message.text)
+
+    if match:
+        edit_note(message,int(match.group(1)))
 
 @bot.message_handler(content_types=['text'])
 def text_message(message):
