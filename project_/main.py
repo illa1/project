@@ -151,7 +151,7 @@ def notification_note(call, note_id):
     if hasattr(call.message, 'message_id'):
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
 
-    m = """Ввудіть новий час у такому форматі:
+    m = """Введіть новий час у такому форматі:
     *день.місяць.рік години:хвилини*
     приклад `25.01.2025 12:00`
     """
@@ -163,10 +163,10 @@ def save_notification_note(message, note_id):
         original_data = dt.strptime(message.text, "%d.%m.%Y %H:%M")
 
         notification = original_data.strftime("%Y-%m-%d %H:%M:00")
-
+        print(notification)
         with get_db_cursor() as cur:
-            cur.execute(f"UPDATE notes SET is_send = 0 notification=? WHERE id= ?", (notification, note_id))
-
+            cur.execute(f"UPDATE notes SET notification=? WHERE id= ?", (notification, note_id))
+            cur.execute(f"UPDATE notes SET is_send = 0 WHERE id= ?", (note_id,))
             if cur.rowcount > 0:
                 bot.send_message(message.chat.id, 'час оновлена')
             else:
